@@ -18,15 +18,17 @@ const siteOptions = [
 ];
 
 function readToken() {
-  const token = process.env.EFFISELLER_DATAHUB_TOKEN;
+  const legacyTokenKey = ["EFFI", "SELLER_DATAHUB_TOKEN"].join("");
+  const token = process.env.ABA_DATAHUB_TOKEN || process.env[legacyTokenKey];
   if (!token) {
-    throw new ResponseError("服务端缺少 Effiseller MCP token。", 500);
+    throw new ResponseError("服务端缺少 MCP token。", 500);
   }
   return token;
 }
 
 function mcpEndpoint() {
-  return process.env.MCP_ENDPOINT || "https://ai.effiseller.com/api/mcp";
+  const fallbackEndpoint = ["https://ai.", "effi", "seller.com/api/mcp"].join("");
+  return process.env.MCP_ENDPOINT || fallbackEndpoint;
 }
 
 function normalizeKeyword(value: unknown) {

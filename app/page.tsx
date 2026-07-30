@@ -91,7 +91,7 @@ type RecentRun = {
 };
 
 const initialSites: SiteOption[] = [{ id: 1286, code: "US", label: "美国站" }];
-const storageKey = "effiseller-aba-public-runs";
+const storageKey = "aba-public-runs";
 const defaultEndDate = new Date().toISOString().slice(0, 10);
 const defaultStartDate = "2026-01-01";
 const numberFormat = new Intl.NumberFormat("en-US");
@@ -365,8 +365,8 @@ export default function Home() {
         <div className="brand-block">
           <div className="brand-mark"><Sparkles size={20} /></div>
           <div>
-            <p className="eyebrow">Effiseller ABA</p>
-            <h1>智易飞 ABA 词库看板</h1>
+            <p className="eyebrow">ABA DataHub</p>
+            <h1>ABA 词库看板</h1>
             <p className="brand-sub">快速查看关键词排名、词根拓展、历史趋势和数据缺口。</p>
           </div>
         </div>

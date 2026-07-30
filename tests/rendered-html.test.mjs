@@ -10,7 +10,7 @@ test("contains the Chinese dashboard source and Next build output", async () => 
     access(new URL("../.next/BUILD_ID", import.meta.url)),
   ]);
 
-  assert.match(page, /智易飞 ABA 词库看板/);
+  assert.match(page, /ABA 词库看板/);
   assert.match(page, /月度排名趋势/);
   assert.match(layout, /lang="zh-CN"/);
   assert.doesNotMatch(page, /SkeletonPreview|codex-preview|react-loading-skeleton/);
