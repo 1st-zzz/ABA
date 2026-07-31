@@ -60,6 +60,27 @@ function dateFromRow(row: Record<string, unknown>) {
   return "";
 }
 
+function termKey(value: unknown) {
+  return normalizeKeyword(value).toLowerCase();
+}
+
+function rankFromRow(row: Record<string, unknown>) {
+  return toInt(row.searchRankInt ?? row.searchRank ?? row.abaRank);
+}
+
+function withRankSnapshots(rows: Record<string, unknown>[], source: string) {
+  return rows
+    .map((row) => ({
+      row,
+      source,
+      date: String(row.date || dateFromRow(row) || ""),
+      rank: rankFromRow(row),
+    }))
+    .filter((item): item is { row: Record<string, unknown>; source: string; date: string; rank: number } =>
+      item.rank !== null,
+    );
+}
+
 function monthRange(startDate: string, endDate: string) {
   const [startYear, startMonth] = startDate.slice(0, 7).split("-").map(Number);
   const [endYear, endMonth] = endDate.slice(0, 7).split("-").map(Number);
@@ -228,21 +249,53 @@ function summarizeMonthly(rows: Record<string, unknown>[], months: string[]) {
   });
 }
 
-function summarizeTerms(historyByTerm: Map<string, Record<string, unknown>[]>) {
+function summarizeTerms(
+  historyByTerm: Map<string, Record<string, unknown>[]>,
+  currentItems: Record<string, unknown>[],
+) {
+  const currentByTerm = new Map<string, Record<string, unknown>[]>();
+  for (const item of currentItems) {
+    const key = termKey(item.searchWords);
+    if (!key) continue;
+    if (!currentByTerm.has(key)) currentByTerm.set(key, []);
+    currentByTerm.get(key)?.push(item);
+  }
+
+  const allKeys = new Set([...historyByTerm.keys()].map(termKey));
+  for (const key of currentByTerm.keys()) allKeys.add(key);
+
   const summaries = [];
-  for (const [term, rows] of historyByTerm.entries()) {
+  for (const key of allKeys) {
+    const historyEntry = [...historyByTerm.entries()].find(([term]) => termKey(term) === key);
+    const term = historyEntry?.[0] || String(currentByTerm.get(key)?.[0]?.searchWords || "");
+    const rows = historyEntry?.[1] || [];
     const sorted = [...rows].sort((a, b) => String(a.date).localeCompare(String(b.date)));
-    const ranks = sorted
-      .map((row) => toInt(row.searchRankInt))
-      .filter((rank): rank is number => rank !== null);
-    const latest = sorted.at(-1);
+    const snapshots = [
+      ...withRankSnapshots(sorted, "history"),
+      ...withRankSnapshots(currentByTerm.get(key) || [], "current"),
+    ];
+    const latest = [...snapshots].sort((a, b) =>
+      b.date.localeCompare(a.date) || a.rank - b.rank,
+    )[0];
+    const best = [...snapshots].sort((a, b) =>
+      a.rank - b.rank || b.date.localeCompare(a.date),
+    )[0];
+    const ranks = snapshots.map((item) => item.rank);
+    const current = [...withRankSnapshots(currentByTerm.get(key) || [], "current")].sort((a, b) =>
+      b.date.localeCompare(a.date) || a.rank - b.rank,
+    )[0];
     summaries.push({
       searchWords: term,
       rowCount: sorted.length,
       firstDate: String(sorted[0]?.date || ""),
-      latestDate: String(latest?.date || ""),
-      latestRank: toInt(latest?.searchRankInt),
-      bestRank: ranks.length ? Math.min(...ranks) : null,
+      latestDate: latest?.date || "",
+      latestRank: latest?.rank ?? null,
+      latestSource: latest?.source || "",
+      currentRank: current?.rank ?? null,
+      currentDate: current?.date || "",
+      bestRank: best?.rank ?? null,
+      bestRankDate: best?.date || "",
+      bestRankSource: best?.source || "",
       worstRank: ranks.length ? Math.max(...ranks) : null,
       avgRank: ranks.length ? Number((ranks.reduce((sum, rank) => sum + rank, 0) / ranks.length).toFixed(2)) : null,
     });
@@ -376,7 +429,7 @@ async function fetchKeywordData(input: Required<SearchInput>) {
     history: {
       calls: historyCalls,
       rows: dedupedHistoryRows,
-      termSummaries: summarizeTerms(historyByTerm),
+      termSummaries: summarizeTerms(historyByTerm, [...exactItems, ...rootItems]),
       monthly,
       coverage: {
         firstDataMonth,

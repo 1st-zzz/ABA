@@ -42,7 +42,11 @@ type TermSummary = {
   searchWords: string;
   rowCount: number;
   latestRank: number | null;
+  latestDate?: string;
+  latestSource?: string;
   bestRank: number | null;
+  bestRankDate?: string;
+  bestRankSource?: string;
 };
 
 type KeywordRun = {
@@ -660,8 +664,18 @@ export default function Home() {
                       <tr key={item.searchWords}>
                         <td>{item.searchWords}</td>
                         <td>{item.rowCount}</td>
-                        <td>{formatNumber(item.latestRank)}</td>
-                        <td>{formatNumber(item.bestRank)}</td>
+                        <td>
+                          <span className="stacked-cell">
+                            <strong>{formatNumber(item.latestRank)}</strong>
+                            <small>{item.latestDate || "-"}</small>
+                          </span>
+                        </td>
+                        <td>
+                          <span className="stacked-cell">
+                            <strong>{formatNumber(item.bestRank)}</strong>
+                            <small>{item.bestRankDate || "-"}</small>
+                          </span>
+                        </td>
                       </tr>
                     ))}
                   </tbody>
