@@ -13,8 +13,11 @@ test("contains the Chinese dashboard source and Next build output", async () => 
 
   assert.match(page, /ABA 词库看板/);
   assert.match(page, /月度排名趋势/);
-  for (const site of ["美国站", "加拿大站", "墨西哥站", "英国站", "德国站", "意大利站", "西班牙站", "土耳其站", "瑞典站"]) {
+  for (const site of ["美国站", "英国站", "德国站"]) {
     assert.match(sitesRoute, new RegExp(site));
+  }
+  for (const site of ["加拿大站", "墨西哥站", "意大利站", "西班牙站", "土耳其站", "瑞典站"]) {
+    assert.doesNotMatch(sitesRoute, new RegExp(site));
   }
   assert.match(layout, /lang="zh-CN"/);
   assert.doesNotMatch(page, /SkeletonPreview|codex-preview|react-loading-skeleton/);
